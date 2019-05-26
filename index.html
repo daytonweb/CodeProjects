@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>Speech to Pokemon</title>
+  <meta name="description" content="Speech to Pokemon">
+  <meta name="author" content="Davis">
+
+</head>
+
+<body>
+
+  <div id="record">
+    <p>Press start recording and ask for a Pokemon!</p>
+    <button id="record-btn">Start Recording</button>
+  </div></br>
+
+  <div id="isRecording"></div></br>
+
+  <div id="pokemon-card">
+    <p id="pokemon-name"></p>
+    <p id="pokemon-number"></p>
+    <img id="pokemon-sprite" src="">
+    <p id="pokemon-type"></p>
+    <p id="pokemon-height"></p>
+    <p id="pokemon-weight"></p>
+  </div>
+
+  <script>
+    window.SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+
+    const sr = new SpeechRecognition();
+    const synth = window.speechSynthesis;
+
+    let speechButton = document.getElementById('record-btn');
+    let pokeCard = document.getElementById('pokemon-card');
+    let pokeName = document.getElementById('pokemon-name');
+    let pokeNumber = document.getElementById('pokemon-number');
+    let pokeImg = document.getElementById('pokemon-sprite');
+    let pokeType = document.getElementById('pokemon-type');
+    let pokeHeight = document.getElementById('pokemon-height');
+    let pokeWeight = document.getElementById('pokemon-weight');
+    let pokeCharacteristic = document.getElementById('pokemon-characteristic');
+    let isRecording = document.getElementById('isRecording');
+
+    speechButton.addEventListener('click', function()
+    {
+      console.log('Started Recording');
+      speechButton.disabled = true;
+      sr.start();
+      isRecording.textContent = "Say a Pokemon name please.";
+
+      setTimeout(function()
+      {
+        speechButton.disabled = false;
+
+      }, 5000);
+
+      sr.onresult = function(event)
+      {
+        console.log("Stopped Recording");
+        const speechToText = event.results[0][0].transcript;
+        isRecording.textContent = "Searching for Pokemon: "+speechToText;
+        if(event.results[0].isFinal)
+        {
+          pokeContent = getPokemonInfo(speechToText);
+        }
+      }
+    });
+
+    function getPokemonInfo(speech)
+    {
+      let http = new XMLHttpRequest();
+      http.responseType = 'json';
+      let url = '/get_pokemon';
+      let params = 'sr='+speech;
+      http.open('POST', url, true);
+
+      http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+
+      http.onreadystatechange = function()
+      {
+        if(http.readyState === 4 && http.status === 200)
+        {
+          isRecording.textContent = '';
+          apiResponse = JSON.stringify(http.response);
+          apiResponse = JSON.parse(apiResponse);
+
+          pokeCard.setAttribute("style", "border:1px solid blue;text-align:center")
+          pokeName.textContent = "Name: "+apiResponse.name;
+          pokeNumber.textContent = "Number: "+apiResponse.number;
+          pokeImg.src = apiResponse.sprite;
+          pokeType.textContent = "Type: "+apiResponse.type;
+          pokeHeight.textContent = "Height: "+apiResponse.height;
+          pokeWeight.textContent = "Weight: "+apiResponse.weight;
+          
+        }
+      }
+      http.send(params);
+    }
+
+    
+
+    const speak = function(action)
+    {
+      utterThis = new SpeechSynthesisUtterance(action());
+      synth.speak(utterThis);
+    }
+
+  </script>
+</body>
+</html>
